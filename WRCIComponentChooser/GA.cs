@@ -14,13 +14,14 @@ namespace WRCIComponentChooser
         public Species(int genomeLength)
         {
             Genome = new double[genomeLength];
-            for (int i = 0; i < Genome.Length; Genome[i++] = R.NextDouble()) ;
+            for (int i = 0; i < Genome.Length; Genome[i++] = R.NextDouble() * 100000) ;
         }
 
         public Species(Species s)
         {
             Genome = new double[s.Genome.Length];
-            for (int i = 0; i < s.Genome.Length; Genome[i++] = s.Genome[i]) ;
+            for (int i = 0; i < s.Genome.Length; i++)
+                Genome[i] = s.Genome[i];
         }
 
         public static Species operator +(Species a, Species b)
@@ -38,7 +39,7 @@ namespace WRCIComponentChooser
         public static Species operator ~(Species a)
         {
             Species result = new Species(a);
-            const double scale = 0.1;
+            const double scale = 1;
             for (int i = 0; i < a.Genome.Length; i++)
                 a.Genome[i] += R.NextDouble() * 2 * scale - scale;
             return result;
@@ -64,6 +65,7 @@ namespace WRCIComponentChooser
         {
             Population = new List<Species>(populationSize);
             FitnessFunction = fitnessFunction;
+            PopulationSize = populationSize;
 
             for (int i = 0; i < populationSize; i++)
                 Population.Add(new Species(genomeLength));
@@ -77,18 +79,46 @@ namespace WRCIComponentChooser
         {
             while (iterations-- > 0)
             {
-                List<Species> parents = new List<Species>();
+                List<Species> parents = Population;
+                Population = new List<Species>(PopulationSize);
+                Population.Add(parents.First());
 
-                parents.AddRange(Population.OrderByDescending(s => s.Fitness).Take((int)Math.Sqrt(PopulationSize)).Select(s => ~s));
+                //Tournament Selection
+                while (Population.Count < PopulationSize)
+                {
+                    Species[] pair = new Species[2];
 
-                Population.Clear();
-                for (int i = 0; i < parents.Count; i++)
-                    for (int j = i + 1; j < parents.Count; j++)
-                        Population.Add(parents[i] + parents[j]);
+                    for (int i = 0; i < 2; i++)
+                    {
+                        int[] randomIndices = new int[10];
+
+                        for (int j = 0; j < randomIndices.Length; j++)
+                            randomIndices[j] = int.MaxValue;
+
+                        for (int j = 0; j < randomIndices.Length; )
+                        {
+                            int r = R.Next(parents.Count);
+                            if (randomIndices.Contains(r)) { continue; }
+                            randomIndices[j++] = r;
+                        }
+
+                        List<Species> tournament = new List<Species>(randomIndices.Length);
+                        for (int j = 0; j < randomIndices.Length; j++)
+                            tournament.Add(parents[randomIndices[j]]);
+                        pair[i] = tournament.OrderByDescending(s => s.Fitness).First();
+                    }
+                    //now have two parents.
+                    Population.Add(~(pair[0] + pair[1]));
+                }
 
                 foreach (Species s in Population)
                     s.Fitness = FitnessFunction(s.Genome);
                 Population.Sort((s, t) => t.Fitness.CompareTo(s.Fitness));
+
+                Console.Clear();
+                Console.WriteLine(BestIndividual.Fitness);
+                foreach (double w in BestIndividual.Genome)
+                    Console.WriteLine(w);
             }
         }
     }

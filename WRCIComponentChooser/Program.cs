@@ -12,7 +12,10 @@ namespace WRCIComponentChooser
     {
         static void Main(string[] args)
         {
-            Fitness(new double[] { 1, 2, 3, 4, 5, 6 });
+            GA ga = new GA(6, 10, Fitness);
+            ga.Train(100);
+            Console.WriteLine(ga.BestIndividual.Fitness);
+            Fitness(ga.BestIndividual.Genome);
         }
 
         static double Fitness(double[] values)
@@ -82,8 +85,13 @@ namespace WRCIComponentChooser
                 }
 
             }
-            //TODO: Calculate frequency, duty cycle
-            //TODO: Calculate fitness
+            double dutyCycle = timeOverZero / (timeOverZero + timeUnderZero);
+            double frequency = zeroCrossings / (simValues.Last().T - simValues.First().T);
+
+            const double desiredFrequency = 100000;
+            const double desiredDutyCycle = 0.5;
+
+            return Math.Sqrt(Math.Pow(desiredFrequency - frequency, 2) + Math.Pow(desiredDutyCycle - dutyCycle, 2));
         }
     }
 
@@ -96,6 +104,11 @@ namespace WRCIComponentChooser
         {
             T = t;
             V = v;
+        }
+
+        public override string ToString()
+        {
+            return "{" + T + " " + V + "}";
         }
     }
 }
