@@ -24,5 +24,15 @@ namespace WRCIComponentChooser
         {
             return r.Next(minValue, maxValue);
         }
+
+        public static int NextNot(int maxValue, params int[] notThese)
+        {
+            int i;
+            do
+            {
+                i = r.Next(maxValue);
+            } while (notThese.Contains(i));
+            return i;
+        }
     }
 }

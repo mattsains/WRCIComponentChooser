@@ -12,32 +12,50 @@ namespace WRCIComponentChooser
     {
         static void Main(string[] args)
         {
-            GA ga = new GA(6, 10, Fitness);
+            GA ga = new GA(6, 1000, Fitness);
             ga.Train(100);
             Console.WriteLine(ga.BestIndividual.Fitness);
-            Fitness(ga.BestIndividual.Genome);
         }
 
-        static double Fitness(double[] values)
+
+        static double Fitness(double[] values, int pid)
         {
             if (values.Length != 6)
                 throw new ArgumentException("Should have six component values");
 
             string[] names = new string[] { "r1v", "r2v", "r3v", "r4v", "c1v", "c2v" };
 
-            using (var sw = new StreamWriter("params.lib"))
+            using (var sw = new StreamWriter("multivibrator." + pid + ".net"))
             {
-                for (int i = 0; i < 6; i++)
-                    sw.WriteLine(".param {0}={1}", names[i], values[i]);
+
+                using (var sr = new StreamReader("multivibrator.net"))
+                {
+                    while (!sr.EndOfStream)
+                    {
+                        string l = sr.ReadLine();
+                        for (int i = 0; i < 6; i++)
+                        {
+                            if (l.Contains(names[i]))
+                            {
+                                double v = values[i];
+                                if (names[i].Contains('c'))
+                                    v /= 1000000;
+                                l = l.Replace(names[i], v.ToString());
+                            }
+                        }
+                        sw.WriteLine(l);
+                    }
+                }
             }
 
-            Process p = System.Diagnostics.Process.Start(new ProcessStartInfo("scad3.exe", "-ascii -b multivibrator.net"));
-
-            p.WaitForExit();
+            using (Process p = System.Diagnostics.Process.Start(new ProcessStartInfo("scad3.exe", "-ascii -b multivibrator." + pid + ".net")))
+            {
+                p.WaitForExit();
+            }
 
             List<Vector2> simValues = new List<Vector2>();
 
-            using (var sr = new StreamReader("multivibrator.raw"))
+            using (var sr = new StreamReader("multivibrator." + pid + ".raw"))
             {
                 for (int i = 0; i < 12; i++)
                     sr.ReadLine();
@@ -53,6 +71,18 @@ namespace WRCIComponentChooser
                 }
             }
 
+            const double desiredFrequency = 2;
+            const double desiredDutyCycle = 0.5;
+
+            double error = 0;
+
+            foreach (Vector2 p in simValues)
+            {
+                double expected = 5 * ((p.T % desiredFrequency < desiredDutyCycle * desiredFrequency) ? 1 : 0);
+                error += Math.Abs(expected - p.V);
+            }
+
+            /*
             //calculate duty cycle and frequency
             int zeroCrossings = 0;
             double timeUnderZero = 0;
@@ -85,13 +115,26 @@ namespace WRCIComponentChooser
                 }
 
             }
+
+
             double dutyCycle = timeOverZero / (timeOverZero + timeUnderZero);
-            double frequency = zeroCrossings / (simValues.Last().T - simValues.First().T);
+            double frequency = (zeroCrossings / (simValues.Last().T - simValues.First().T)) / 2;
 
-            const double desiredFrequency = 100000;
-            const double desiredDutyCycle = 0.5;
+            
+            
+            double fitness = frequency; //Math.Abs(desiredFrequency - frequency) / desiredFrequency;// +Math.Abs(desiredDutyCycle - dutyCycle); //Math.Sqrt(Math.Pow(desiredFrequency - frequency, 2) + Math.Pow(desiredDutyCycle - dutyCycle, 2));
+            */
 
-            return Math.Sqrt(Math.Pow(desiredFrequency - frequency, 2) + Math.Pow(desiredDutyCycle - dutyCycle, 2));
+            double fitness = -error / simValues.Count;
+
+            Console.WriteLine("Frequency: {0:N3}\tDuty Cycle: {1:N4}\tFitness: {2:N4}", 0, 0, fitness);
+
+            File.Delete("multivibrator." + pid + ".net");
+            File.Delete("multivibrator." + pid + ".log");
+            File.Delete("multivibrator." + pid + ".raw");
+            File.Delete("multivibrator." + pid + ".op.raw");
+
+            return fitness;
         }
     }
 

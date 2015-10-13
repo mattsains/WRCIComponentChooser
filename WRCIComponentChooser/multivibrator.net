@@ -6,10 +6,8 @@
 * Ground is 0
 * Format:
 * Label From To Value
-* Params to be set in params.lib:
+* Params to be set by genetic algorithm:
 *  r1v, r2v, r3v, r4v, c1v, c2v
- 
-.INCLUDE "params.lib"
 
 V1 N001 0 5
 R1 N001 O1 {r1v}
@@ -28,7 +26,7 @@ Q2 O2 N002 0 0 2N3904
 +  TR=250E-9  TF=350E-12 ITF=1 VTF=2 XTF=3 Vceo=40 Icrating=200m mfg=Philips)
 
 * Do a transient simulation for four seconds
-.tran 4 startup
+.tran 100 startup
 * Save the output node's voltage to a text file
 .save v(o1)
 .end
