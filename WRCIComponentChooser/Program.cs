@@ -12,7 +12,7 @@ namespace WRCIComponentChooser
     {
         static void Main(string[] args)
         {
-            GA ga = new GA(3, 500, Fitness);
+            GA ga = new GA(6, 500, Fitness);
             ga.Train(100);
             Console.WriteLine(ga.BestIndividual.Fitness);
         }
@@ -20,10 +20,10 @@ namespace WRCIComponentChooser
 
         static double Fitness(double[] values, int pid, bool delete)
         {
-            if (values.Length != 3)
+            if (values.Length != 6)
                 throw new ArgumentException("Should have six component values");
 
-            string[] names = new string[] { "r1v", "r2v", "cv" };
+            string[] names = new string[] { "r1v", "r2v", "r3v", "r4v", "c1v", "c2v" };
 
             using (var sw = new StreamWriter("multivibrator." + pid + ".net"))
             {
@@ -33,7 +33,7 @@ namespace WRCIComponentChooser
                     while (!sr.EndOfStream)
                     {
                         string l = sr.ReadLine();
-                        for (int i = 0; i < 3; i++)
+                        for (int i = 0; i < 6; i++)
                         {
                             if (l.Contains(names[i]))
                             {
@@ -70,24 +70,52 @@ namespace WRCIComponentChooser
                     simValues.Add(new Vector2(time, v));
                 }
             }
+            const double desiredFrequency = 2;
+            const double desiredDutyCycle = 0.2;
+            const double desiredPeak = 5;
 
-            const decimal desiredPeriod = 5M;
-            const decimal desiredDutyCycle = 0.5M;
+            //calculate duty cycle and frequency
+            int zeroCrossings = 0;
+            double timeUnderZero = 0;
+            double timeOverZero = 0;
+            double average = simValues.Average(v => v.V);
 
-            double error = 0;
-            using (StreamWriter w = new StreamWriter("wave." + pid + ".csv"))
-            {
-                foreach (Vector2 p in simValues)
+            for (int i = 0; i + 1 < simValues.Count; i++)
+                if (simValues[i].V <= average && simValues[i + 1].V >= average)
                 {
-                    double expected = 5 * (((decimal)p.T % desiredPeriod < desiredDutyCycle * desiredPeriod) ? 1 : 0);
-                    w.WriteLine("{0}\t{1}\t{2}", p.T, expected, p.V);
-                    error += Math.Abs(expected - p.V);
+                    //TODO: interpolate a crossing point and add to time under/over zero
+                    zeroCrossings++;
                 }
-            }
+                else if (simValues[i].V >= average && simValues[i + 1].V <= average)
+                {
+                    //TODO: interpolate a crossing point and add to time under/over zero
+                    zeroCrossings++;
+                }
+                else if (simValues[i].V > average && simValues[i].V > average)
+                {
+                    timeOverZero += (simValues[i + 1].T - simValues[i].T);
+                }
+                else if (simValues[i].V < average && simValues[i].V < average)
+                {
+                    timeUnderZero += (simValues[i + 1].T - simValues[i].T);
+                }
+                else
+                {
+                    throw new Exception("My logic must be wrong");
+                }
 
-            double fitness = -error / simValues.Count;
 
-            Console.WriteLine("{0}\tFitness: {1:N4}", pid, fitness);
+
+            double dutyCycle = timeOverZero / (timeOverZero + timeUnderZero);
+            double frequency = (zeroCrossings / (simValues.Last().T - simValues.First().T)) / 2;
+
+
+
+            double fitness = Math.Abs(desiredPeak - average / dutyCycle) / desiredPeak + Math.Abs(desiredFrequency - frequency) / desiredFrequency + Math.Abs(desiredDutyCycle - dutyCycle) / desiredDutyCycle; //Math.Abs(desiredFrequency - frequency) / desiredFrequency;// +Math.Abs(desiredDutyCycle - dutyCycle); //Math.Sqrt(Math.Pow(desiredFrequency - frequency, 2) + Math.Pow(desiredDutyCycle - dutyCycle, 2));
+
+
+            Console.WriteLine("{0}\tFrequency: {1:N3}   Duty Cycle: {2:N4}   Peak: {3:N4}   Fitness: {4:N4}", pid, frequency, dutyCycle, average / dutyCycle, fitness);
+
             if (delete)
             {
                 File.Delete("multivibrator." + pid + ".net");
@@ -96,7 +124,7 @@ namespace WRCIComponentChooser
                 File.Delete("multivibrator." + pid + ".op.raw");
                 File.Delete("wave." + pid + ".csv");
             }
-            return fitness;
+            return -fitness;
         }
     }
 

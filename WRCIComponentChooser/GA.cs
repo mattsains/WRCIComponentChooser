@@ -81,8 +81,8 @@ namespace WRCIComponentChooser
 
         public void Clamp()
         {
-            double[] ClampMax = new double[3] { 1e6, 1e6, /*1e6, 1e6, 1000,*/ 1000 };
-            double[] ClampMin = new double[3] { 1, 1, /*1, 1, 1e-6,*/ 1e-6 };
+            double[] ClampMax = new double[6] { 1e6, 1e6, 1e6, 1e6, 1000, 1000 };
+            double[] ClampMin = new double[6] { 1, 1, 1, 1, 1e-6, 1e-6 };
             for (int i = 0; i < Genome.Length; i++)
             {
                 if (Genome[i] > ClampMax[i])
