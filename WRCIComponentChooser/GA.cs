@@ -81,8 +81,8 @@ namespace WRCIComponentChooser
 
         public void Clamp()
         {
-            double[] ClampMax = new double[6] { 1e6, 1e6, 1e6, 1e6, 1000, 1000 };
-            double[] ClampMin = new double[6] { 1, 1, 1, 1, 1e-3, 1e-3 };
+            double[] ClampMax = new double[3] { 1e6, 1e6, /*1e6, 1e6, 1000,*/ 1000 };
+            double[] ClampMin = new double[3] { 1, 1, /*1, 1, 1e-6,*/ 1e-6 };
             for (int i = 0; i < Genome.Length; i++)
             {
                 if (Genome[i] > ClampMax[i])
@@ -101,7 +101,7 @@ namespace WRCIComponentChooser
         //Keep this sorted by fitness descending
         public List<Species> Population { get; private set; }
 
-        protected Func<double[], int, double> FitnessFunction;
+        protected Func<double[], int, bool, double> FitnessFunction;
 
         public Species BestIndividual
         {
@@ -110,7 +110,7 @@ namespace WRCIComponentChooser
 
         int pid = 0;
 
-        public GA(int genomeLength, int populationSize, Func<double[], int, double> fitnessFunction)
+        public GA(int genomeLength, int populationSize, Func<double[], int, bool, double> fitnessFunction)
         {
             Population = new List<Species>(populationSize);
             FitnessFunction = fitnessFunction;
@@ -126,7 +126,7 @@ namespace WRCIComponentChooser
                 int pidd = pid++;
                 Task t = new Task(() =>
                 {
-                    s.Fitness = FitnessFunction(s.Genome, pidd);
+                    s.Fitness = FitnessFunction(s.Genome, pidd, true);
                 });
                 tasks.Add(t);
                 t.Start();
@@ -179,7 +179,7 @@ namespace WRCIComponentChooser
                     int pidd = pid++;
                     Task t = new Task(() =>
                         {
-                            s.Fitness = FitnessFunction(s.Genome, pidd);
+                            s.Fitness = FitnessFunction(s.Genome, pidd, true);
                         });
                     tasks.Add(t);
                     t.Start();
@@ -190,6 +190,7 @@ namespace WRCIComponentChooser
 
                 Console.Clear();
                 Console.WriteLine(BestIndividual.Fitness);
+                FitnessFunction(BestIndividual.Genome, -iterations, false);
             }
         }
     }

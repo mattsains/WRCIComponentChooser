@@ -12,17 +12,20 @@ namespace WRCIComponentChooser
 
         public static double NextDouble()
         {
-            return r.NextDouble();
+            lock (r)
+                return r.NextDouble();
         }
 
         public static int Next(int maxValue = int.MaxValue)
         {
-            return r.Next(maxValue);
+            lock (r)
+                return r.Next(maxValue);
         }
 
         public static int Next(int minValue, int maxValue)
         {
-            return r.Next(minValue, maxValue);
+            lock (r)
+                return r.Next(minValue, maxValue);
         }
 
         public static int NextNot(int maxValue, params int[] notThese)
@@ -30,7 +33,8 @@ namespace WRCIComponentChooser
             int i;
             do
             {
-                i = r.Next(maxValue);
+                lock (r)
+                    i = r.Next(maxValue);
             } while (notThese.Contains(i));
             return i;
         }

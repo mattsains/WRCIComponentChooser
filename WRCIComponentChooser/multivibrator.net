@@ -12,17 +12,22 @@
 V1 N001 0 5
 R1 N001 O1 {r1v}
 R2 N001 N002 {r2v}
-R3 N001 N003 {r3v}
-R4 N001 O2 {r4v}
-C1 N002 O1 {c1v}
-C2 O2 N003 {c2v}
-Q1 O1 N003 0 0 2N3904
-Q2 O2 N002 0 0 2N3904
+R3 N001 N003 {r2v}
+R4 N001 O2 {r1v}
+C1 N002 O1 {cv}
+C2 O2 N003 {cv}
+Q1 O1 N003 0 0 2N39041
+Q2 O2 N002 0 0 2N39042
 
 * This next bit is a definition for the 2N3904 NPN BJT
-.model 2N3904 NPN(IS=1E-14 VAF=100
+.model 2N39041 NPN(IS=1E-14 VAF=100
 +  Bf=300 IKF=0.4 XTB=1.5 BR=4
 +  CJC=4E-12  CJE=8E-12 RB=20 RC=0.1 RE=0.1
++  TR=250E-9  TF=350E-12 ITF=1 VTF=2 XTF=3 Vceo=40 Icrating=200m mfg=Philips)
+
+.model 2N39042 NPN(IS=1E-14 VAF=100
++  Bf=311 IKF=0.41 XTB=1.49 BR=4.1
++  CJC=4.01E-12  CJE=8E-12 RB=20 RC=0.12 RE=0.09
 +  TR=250E-9  TF=350E-12 ITF=1 VTF=2 XTF=3 Vceo=40 Icrating=200m mfg=Philips)
 
 * Do a transient simulation for four seconds
