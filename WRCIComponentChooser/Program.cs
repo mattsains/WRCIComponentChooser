@@ -59,19 +59,20 @@ namespace WRCIComponentChooser
             {
                 for (int i = 0; i < 12; i++)
                     sr.ReadLine();
+                using (var sw = new StreamWriter("wave." + pid + ".csv"))
+                    while (!sr.EndOfStream)
+                    {
+                        string s = sr.ReadLine();
+                        double time = double.Parse(s.Substring(s.IndexOf('\t') + 1));
 
-                while (!sr.EndOfStream)
-                {
-                    string s = sr.ReadLine();
-                    double time = double.Parse(s.Substring(s.IndexOf('\t') + 1));
+                        double v = double.Parse(sr.ReadLine());
 
-                    double v = double.Parse(sr.ReadLine());
-
-                    simValues.Add(new Vector2(time, v));
-                }
+                        simValues.Add(new Vector2(time, v));
+                        sw.WriteLine("{0};{1}", time, v);
+                    }
             }
-            const double desiredFrequency = 2;
-            const double desiredDutyCycle = 0.2;
+            const double desiredFrequency = 1;
+            const double desiredDutyCycle = 0.5;
             const double desiredPeak = 5;
 
             //calculate duty cycle and frequency
@@ -113,8 +114,8 @@ namespace WRCIComponentChooser
 
             double fitness = Math.Abs(desiredPeak - average / dutyCycle) / desiredPeak + Math.Abs(desiredFrequency - frequency) / desiredFrequency + Math.Abs(desiredDutyCycle - dutyCycle) / desiredDutyCycle; //Math.Abs(desiredFrequency - frequency) / desiredFrequency;// +Math.Abs(desiredDutyCycle - dutyCycle); //Math.Sqrt(Math.Pow(desiredFrequency - frequency, 2) + Math.Pow(desiredDutyCycle - dutyCycle, 2));
 
-
-            Console.WriteLine("{0}\tFrequency: {1:N3}   Duty Cycle: {2:N4}   Peak: {3:N4}   Fitness: {4:N4}", pid, frequency, dutyCycle, average / dutyCycle, fitness);
+            if (!delete)
+                Console.WriteLine("{0}\tFrequency: {1:N3}   Duty Cycle: {2:N4}   Peak: {3:N4}   Fitness: {4:N4}", pid, frequency, dutyCycle, average / dutyCycle, fitness);
 
             if (delete)
             {

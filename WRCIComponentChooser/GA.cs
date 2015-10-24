@@ -83,12 +83,31 @@ namespace WRCIComponentChooser
         {
             double[] ClampMax = new double[6] { 1e6, 1e6, 1e6, 1e6, 1000, 1000 };
             double[] ClampMin = new double[6] { 1, 1, 1, 1, 1e-6, 1e-6 };
+
+            double[] allowedValues = new double[] { 10, 12, 15, 18, 22, 27, 33, 39, 47, 56, 68, 82 };
             for (int i = 0; i < Genome.Length; i++)
             {
                 if (Genome[i] > ClampMax[i])
                     Genome[i] = ClampMax[i];
                 if (Genome[i] < ClampMin[i])
                     Genome[i] = ClampMin[i];
+                
+                int mag = 0;
+                while (Genome[i] > 100)
+                {
+                    mag++;
+                    Genome[i] /= 10;
+                }
+                while (Genome[i] < 10)
+                {
+                    mag--;
+                    Genome[i] *= 10;
+                }
+                double closest = 10;
+                foreach (double d in allowedValues)
+                    if (Math.Abs(Genome[i] - d) < Math.Abs(Genome[i] - closest))
+                        closest = d;
+                Genome[i] = closest * Math.Pow(10, mag);
             }
         }
     }
@@ -188,8 +207,8 @@ namespace WRCIComponentChooser
 
                 Population.Sort((s, t) => t.Fitness.CompareTo(s.Fitness));
 
-                Console.Clear();
-                Console.WriteLine(BestIndividual.Fitness);
+                /*      Console.Clear();
+                      Console.WriteLine(BestIndividual.Fitness);*/
                 FitnessFunction(BestIndividual.Genome, -iterations, false);
             }
         }
